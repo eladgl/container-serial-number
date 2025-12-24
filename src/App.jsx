@@ -1,4 +1,4 @@
-import MainLayout from "./layout/MainLayout";
+import MainLayout from "./layout/mainLayout";
 import CodeEntryScreen from "./components/CodeEntryScreen";
 
 function App() {
