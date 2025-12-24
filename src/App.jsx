@@ -1,9 +1,11 @@
+import MainLayout from "./layout/MainLayout";
+import CodeEntryScreen from "./components/CodeEntryScreen";
+
 function App() {
   return (
-    <div>
-      <h1>React + Vite</h1>
-      <p>Skeleton app is running.</p>
-    </div>
+    <MainLayout>
+      <CodeEntryScreen />
+    </MainLayout>
   );
 }
 
