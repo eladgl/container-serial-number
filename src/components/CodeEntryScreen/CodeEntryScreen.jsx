@@ -1,8 +1,9 @@
 import { Stack, Typography, Divider } from "@mui/material";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import CharFieldsRow from "./CharFieldsRow";
 import FixCheckboxRow from "./FixCheckboxRow";
+import validateSerialNumber from "../../calculations/validation";
 
 const SLOTS_COUNT = 11;
 
@@ -29,6 +30,10 @@ function CodeEntryScreen() {
     });
   };
 
+  useEffect(() => {
+    console.log(validateSerialNumber(chars));
+  }, [chars]);
+
   return (
     <Stack spacing={2}>
       <Typography variant="h5">Code Entry</Typography>
@@ -42,7 +47,11 @@ function CodeEntryScreen() {
           onChange={handleCharChange}
         />
 
-        <FixCheckboxRow fixed={fixed} onToggle={handleFixedToggle} />
+        <FixCheckboxRow
+          values={chars}
+          fixed={fixed}
+          onToggle={handleFixedToggle}
+        />
       </Stack>
     </Stack>
   );

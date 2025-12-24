@@ -15,8 +15,8 @@ function MainLayout({ children }) {
         elevation={4}
         sx={{
           width: "100%",
-          maxWidth: 640, // enough for 11 fields
-          p: 3,
+          maxWidth: 780, // enough for 11 fields
+          p: 5,
         }}
       >
         {children}
