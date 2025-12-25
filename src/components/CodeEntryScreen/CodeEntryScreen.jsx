@@ -31,7 +31,8 @@ function CodeEntryScreen() {
   };
 
   useEffect(() => {
-    console.log(validateSerialNumber(chars));
+    const checkSumDigit = validateSerialNumber(chars);
+    handleCharChange(10, checkSumDigit);
   }, [chars]);
 
   return (

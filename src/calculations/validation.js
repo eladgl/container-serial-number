@@ -1,17 +1,22 @@
 import letterToValueMap from "./letterToValueMap";
-import indexToPower from "./indexToPower";
+import indexToPower from "./indexToPower"
 
 const validateSerialNumber = (arr) => {
     const initialValue = 0
     console.log(arr)
     const sum = arr.reduce((acc, currentCharacter, i) => {
         if(i < 4) {
-            console.log(letterToValueMap[currentCharacter])
             return acc + letterToValueMap[currentCharacter] * indexToPower[i];
+        } else if(i === 10) {
+            return acc;
         }
         return acc + Number(currentCharacter) * indexToPower[i];
     }, initialValue)
-    return sum;
+
+    const divided = sum / 11;
+    const withoutRemainder = Math.floor(divided);
+    const checksumDigit = sum - withoutRemainder * 11;
+    return checksumDigit % 10;
 };
 
 export default validateSerialNumber;
