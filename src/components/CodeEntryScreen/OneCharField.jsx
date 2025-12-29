@@ -22,6 +22,7 @@ function OneCharField({
   };
 
   const handleChange = (e) => {
+    debugger;
     const next = normalize(e.target.value);
     onChange(next);
   };

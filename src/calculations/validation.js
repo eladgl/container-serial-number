@@ -1,16 +1,15 @@
-import letterToValueMap from "./letterToValueMap";
-import indexToPower from "./indexToPower"
+import { LETTER_VALUE, WEIGHTS_10 } from "./constants";
 
 const validateSerialNumber = (arr) => {
     const initialValue = 0
     console.log(arr)
     const sum = arr.reduce((acc, currentCharacter, i) => {
         if(i < 4) {
-            return acc + letterToValueMap[currentCharacter] * indexToPower[i];
+            return acc + LETTER_VALUE[currentCharacter] * WEIGHTS_10[i];
         } else if(i === 10) {
             return acc;
         }
-        return acc + Number(currentCharacter) * indexToPower[i];
+        return acc + Number(currentCharacter) * WEIGHTS_10[i];
     }, initialValue)
 
     const divided = sum / 11;
