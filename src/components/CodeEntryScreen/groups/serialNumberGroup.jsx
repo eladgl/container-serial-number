@@ -1,10 +1,10 @@
-import { Stack } from "@mui/material";
+import { Stack } from '@mui/material';
 
-import CheckboxGroup from "./checkboxGroup";
+import CheckboxGroup from './checkboxGroup';
 
-import FieldGroup from "../FieldGroup";
-import FixCheckbox from "../FixCheckbox";
-import OneCharField from "../OneCharField";
+import FieldGroup from '../FieldGroup';
+import FixCheckbox from '../FixCheckbox';
+import OneCharField from '../OneCharField';
 
 const SerialNumberGroup = ({ fixed, onChange, onToggle, values, width }) => {
   const serialIdx = [4, 5, 6, 7, 8, 9];

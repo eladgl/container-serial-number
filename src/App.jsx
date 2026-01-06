@@ -1,5 +1,5 @@
-import MainLayout from "./layout/mainLayout";
-import CodeEntryScreen from "./components/CodeEntryScreen";
+import MainLayout from './layout/mainLayout';
+import CodeEntryScreen from './components/CodeEntryScreen';
 
 function App() {
   return (

@@ -1,1 +1,1 @@
-export { default } from "./CodeEntryScreen";
+export { default } from './CodeEntryScreen';

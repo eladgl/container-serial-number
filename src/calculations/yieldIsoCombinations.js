@@ -1,22 +1,22 @@
-"use strict";
+'use strict';
 
 /**
  * ISO 6346 letter mapping and weights are expected from constants.
  * - LETTER_VALUE: map A..Z -> numeric values (10,12,... skipping multiples of 11)
  * - WEIGHTS_10:   weights for positions 0..9 (usually 2^pos)
  */
-import { LETTER_VALUE, WEIGHTS_10 } from "./constants";
+import { LETTER_VALUE, WEIGHTS_10 } from './constants';
 
 function isChar(x) {
-  return typeof x === "string" && x.length === 1;
+  return typeof x === 'string' && x.length === 1;
 }
 
 function isDigitChar(ch) {
-  return isChar(ch) && ch >= "0" && ch <= "9";
+  return isChar(ch) && ch >= '0' && ch <= '9';
 }
 
 function isUpperLetter(ch) {
-  return isChar(ch) && ch >= "A" && ch <= "Z";
+  return isChar(ch) && ch >= 'A' && ch <= 'Z';
 }
 
 function normalizeCharOrNull(x) {
@@ -71,8 +71,8 @@ function domainForPosition(i) {
     for (let c = 65; c <= 90; c++) out.push(String.fromCharCode(c)); // A..Z
     return out;
   }
-  if (i === 3) return ["J", "U", "Z"]; // category identifier
-  if (i >= 4 && i <= 10) return ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
+  if (i === 3) return ['J', 'U', 'Z']; // category identifier
+  if (i >= 4 && i <= 10) return ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
   throw new Error(`Bad position ${i}`);
 }
 
@@ -102,7 +102,7 @@ function buildAllowed(pattern, fixedPositions) {
   }
 
   // Validate category constraint
-  if (allowed[3].some((v) => !["U", "J", "Z"].includes(v))) return null;
+  if (allowed[3].some((v) => !['U', 'J', 'Z'].includes(v))) return null;
 
   // Digits in serial + checksum
   for (let i = 4; i <= 10; i++) {
@@ -116,11 +116,11 @@ function buildAllowed(pattern, fixedPositions) {
 
   // Checksum constrained to 0?
   const checksumConstrainedTo0 =
-    (pattern[10] === "0" && fixedPositions[10] === 1) ||
-    (pattern[10] === "0" && fixedPositions[10] === 0 && pattern[10] != null);
+    (pattern[10] === '0' && fixedPositions[10] === 1) ||
+    (pattern[10] === '0' && fixedPositions[10] === 0 && pattern[10] != null);
 
   if (checksumConstrainedTo0) {
-    const must = ["I", "S", "O"];
+    const must = ['I', 'S', 'O'];
     for (let i = 0; i < 3; i++) {
       if (!allowed[i].includes(must[i])) return null;
       allowed[i] = [must[i]];
@@ -139,9 +139,9 @@ function buildAllowed(pattern, fixedPositions) {
  * Generator yielding ISO 6346 codes matching constraints.
  * Order is lexicographic because we fill left-to-right with sorted domains.
  */
-function* yieldIso6346Combinations(pattern, fixedPositions, { limit = Infinity } = {}) {
-  assertArrayLen("pattern", pattern, 11);
-  assertArrayLen("fixedPositions", fixedPositions, 11);
+function* yieldIso6346Combinations(pattern, fixedPositions, limit) {
+  assertArrayLen('pattern', pattern, 11);
+  assertArrayLen('fixedPositions', fixedPositions, 11);
 
   // Normalize just in case callers pass lowercase or empty strings
   const normPattern = pattern.map(normalizeCharOrNull);
@@ -165,7 +165,7 @@ function* yieldIso6346Combinations(pattern, fixedPositions, { limit = Infinity }
       if (allowed[10].includes(cdChar)) {
         buf[10] = cdChar;
         yielded++;
-        yield buf.join("");
+        yield buf.join('');
       }
       return;
     }

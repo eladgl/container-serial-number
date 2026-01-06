@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 /**
  * ISO 6346 letter mapping (A=10, B=12, ... skipping multiples of 11).

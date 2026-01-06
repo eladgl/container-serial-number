@@ -1,42 +1,85 @@
-import { Stack, Typography, Divider, Button } from "@mui/material";
-import { useEffect, useMemo, useState } from "react";
+import { Divider, Stack, Typography } from '@mui/material';
 
-import CharFieldsRow from "./CharFieldsRow";
-import validateSerialNumber from "../../calculations/validation";
-import { yieldIso6346Combinations } from "../../calculations/yieldIsoCombinations";
+import { useEffect, useMemo, useState, useRef, useCallback } from 'react';
+
+import CodePanel from './codePanel';
+import validateSerialNumber from '../../calculations/validation';
+import CombinationRow from '../combinationRow';
+import CombinationsResultsTable from './combinationsResultsTable';
+import ExportToExcelRow from './exportToExcelRow';
+
+import { yieldIso6346Combinations } from '../../calculations/yieldIsoCombinations';
+import { normalizeCellToPatternValue } from './utils';
 
 const SLOTS_COUNT = 11;
 const CHECKSUM_INDEX = 10;
 
-function normalizeCellToPatternValue(cell) {
-  const s = String(cell ?? "").trim();
-  if (!s) return null;
-  return s[0].toUpperCase(); // 1 char
+const SCROLL_CHUNK = 50;
+
+function takeWithPeek(iterator, pendingRef, count) {
+  const out = [];
+
+  // Consume any prefetched items first
+  while (pendingRef.current.length > 0 && out.length < count) {
+    out.push(pendingRef.current.shift());
+  }
+
+  // Pull up to `count` items
+  while (out.length < count) {
+    const { value, done } = iterator.next();
+    if (done) {
+      return { items: out, hasNextPage: false };
+    }
+    out.push(value);
+  }
+
+  // Peek 1 item to know if more exist
+  const peek = iterator.next();
+  if (peek.done) {
+    return { items: out, hasNextPage: false };
+  }
+
+  // Store peeked value for next time
+  pendingRef.current.push(peek.value);
+  return { items: out, hasNextPage: true };
 }
 
 function CodeEntryScreen() {
-  const [chars, setChars] = useState(() => Array(SLOTS_COUNT).fill(""));
+  const [chars, setChars] = useState(() => Array(SLOTS_COUNT).fill(''));
   const [fixed, setFixed] = useState(() => Array(SLOTS_COUNT).fill(false));
-  const [combinations, setCombinations] = useState([]);
-  const [error, setError] = useState("");
 
-  // Your validateSerialNumber computes something based on first 10 slots.
-  // We show it as an informational "computed checksum", but DO NOT force it into the input.
+  const [combinations, setCombinations] = useState([]);
+  const [hasNextPage, setHasNextPage] = useState(false);
+  const [isNextPageLoading, setIsNextPageLoading] = useState(false);
+
+  const [error, setError] = useState('');
+
+  // The iterator and a small buffer for “peek”
+  const combosIteratorRef = useRef(null);
+  const pendingRef = useRef([]);
+
+  const handleCharChange = (index, nextChar) => {
+    setChars((prev) => {
+      const copy = [...prev];
+      copy[index] = nextChar;
+      return copy;
+    });
+  };
+
   const computedChecksumDigit = useMemo(() => {
     const first10 = chars.slice(0, CHECKSUM_INDEX);
     try {
       const cd = validateSerialNumber(first10);
       return String(cd);
     } catch {
-      // If user still has empty/invalid cells, computation may fail; keep it blank.
-      return "";
+      return '';
     }
   }, [chars]);
 
-  const handleCharChange = (index, nextChar) => {
-    setChars((prev) => {
+  const handleFixedToggle = (index, isFixed) => {
+    setFixed((prev) => {
       const copy = [...prev];
-      copy[index] = nextChar;
+      copy[index] = isFixed;
       return copy;
     });
   };
@@ -49,52 +92,70 @@ function CodeEntryScreen() {
     });
   }, [computedChecksumDigit]);
 
-  const handleFixedToggle = (index, isFixed) => {
-    // Enforce: if user tries to fix an empty slot, block (generator requires fixed => value)
-    const cell = chars[index];
-    const normalized = normalizeCellToPatternValue(cell);
+  const pattern = useMemo(
+    () => chars.map(normalizeCellToPatternValue),
+    [chars],
+  );
+  const fixedPositions = useMemo(() => fixed.map((b) => (b ? 1 : 0)), [fixed]);
 
-    if (isFixed && normalized == null) {
-      setError(`Cannot fix position ${index + 1}: it has no value.`);
-      return;
-    }
+  const startSearch = useCallback(
+    (initialBatchSize) => {
+      setError('');
+      setIsNextPageLoading(false);
 
-    setError("");
-    setFixed((prev) => {
-      const copy = [...prev];
-      copy[index] = isFixed;
-      return copy;
-    });
-  };
+      try {
+        // New search => reset iterator + pending buffer
+        combosIteratorRef.current = yieldIso6346Combinations(
+          pattern,
+          fixedPositions,
+        );
+        pendingRef.current = [];
 
-  const handleGetCombinations = () => {
-    setError("");
+        const { items, hasNextPage: more } = takeWithPeek(
+          combosIteratorRef.current,
+          pendingRef,
+          initialBatchSize,
+        );
 
-    // Convert UI state -> generator inputs
-    const pattern = chars.map(normalizeCellToPatternValue);
+        setCombinations(items);
+        setHasNextPage(more);
+      } catch (e) {
+        combosIteratorRef.current = null;
+        pendingRef.current = [];
+        setCombinations([]);
+        setHasNextPage(false);
+        setError('Failed generating combinations.');
+      }
+    },
+    [pattern, fixedPositions],
+  );
 
-    // fixed boolean[] -> 0/1 array
-    const fixedPositions = fixed.map((b) => (b ? 1 : 0));
+  const loadMore = useCallback(
+    async (count) => {
+      const it = combosIteratorRef.current;
+      if (!it) return;
+      if (isNextPageLoading) return;
+      if (!hasNextPage) return;
 
-    // If checksum cell is empty but fixed=true, block (same rule)
-    if (fixed[CHECKSUM_INDEX] && pattern[CHECKSUM_INDEX] == null) {
-      setError("Checksum is fixed but empty. Enter a checksum digit 0-9.");
-      return;
-    }
+      setIsNextPageLoading(true);
+      try {
+        const { items: nextItems, hasNextPage: more } = takeWithPeek(
+          it,
+          pendingRef,
+          count,
+        );
 
-    // Safety limit: otherwise you will freeze the UI for large search spaces
-    const limit = 500;
-
-    try {
-      const results = Array.from(
-        yieldIso6346Combinations(pattern, fixedPositions, { limit })
-      );
-      setCombinations(results);
-    } catch (e) {
-      setCombinations([]);
-      setError(e?.message || "Failed to generate combinations.");
-    }
-  };
+        setCombinations((prev) => prev.concat(nextItems));
+        setHasNextPage(more);
+      } catch (e) {
+        setError('Failed loading more combinations.');
+        setHasNextPage(false);
+      } finally {
+        setIsNextPageLoading(false);
+      }
+    },
+    [hasNextPage, isNextPageLoading],
+  );
 
   return (
     <Stack spacing={2}>
@@ -103,48 +164,39 @@ function CodeEntryScreen() {
 
       <Stack spacing={1}>
         <Typography variant="body2">
-          Computed checksum (from first 10 slots):{" "}
-          <strong>{computedChecksumDigit || "-"}</strong>
+          Computed checksum (from first 10 slots):{' '}
+          <strong>{computedChecksumDigit || '-'}</strong>
         </Typography>
-
-        {error && (
-          <Typography variant="body2" color="error">
-            {error}
-          </Typography>
-        )}
       </Stack>
 
-      <Stack spacing={1.5}>
-        <CharFieldsRow
-          values={chars} // IMPORTANT: checksum is editable, so use raw chars
-          fixed={fixed}
-          width={44}
-          onChange={handleCharChange}
-          onToggle={handleFixedToggle}
-        />
-      </Stack>
+      <CodePanel
+        chars={chars}
+        fixed={fixed}
+        onChange={handleCharChange}
+        onFixed={handleFixedToggle}
+      />
 
-      <Button
-        size="small"
-        variant="contained"
-        color="success"
-        onClick={handleGetCombinations}
-      >
-        Get Combinations
-      </Button>
+      <CombinationRow
+        isComboGot={!!combinations.length}
+        hasNextPage={hasNextPage}
+        isNextPageLoading={isNextPageLoading}
+        onGetCombinations={startSearch}
+        onLoadMore={(n) => loadMore(n)}
+      />
 
       {!!combinations.length && (
         <Stack spacing={0.5}>
+          <ExportToExcelRow combinations={combinations} chars={chars} />
           <Typography variant="subtitle2">
-            Showing {combinations.length} results (limit 500)
+            Showing {combinations.length} results
           </Typography>
-
-          <Stack sx={{ maxHeight: 280, overflow: "auto" }}>
-            {combinations.map((code) => (
-              <Typography key={code} variant="body2">
-                {code}
-              </Typography>
-            ))}
+          <Stack sx={{ height: 280 }}>
+            <CombinationsResultsTable
+              combinations={combinations}
+              hasNextPage={hasNextPage}
+              isNextPageLoading={isNextPageLoading}
+              loadMore={() => loadMore(SCROLL_CHUNK)} // scroll loads exactly 50
+            />
           </Stack>
         </Stack>
       )}
@@ -152,6 +204,12 @@ function CodeEntryScreen() {
       {!combinations.length && !error && (
         <Typography variant="body2" sx={{ opacity: 0.7 }}>
           No results yet. Enter constraints and click Get Combinations.
+        </Typography>
+      )}
+
+      {!!error && (
+        <Typography variant="body2" color="error">
+          {error}
         </Typography>
       )}
     </Stack>

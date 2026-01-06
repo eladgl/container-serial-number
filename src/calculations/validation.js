@@ -1,8 +1,7 @@
-import { LETTER_VALUE, WEIGHTS_10 } from "./constants";
+import { LETTER_VALUE, WEIGHTS_10 } from './constants';
 
 const validateSerialNumber = (arr) => {
     const initialValue = 0
-    console.log(arr)
     const sum = arr.reduce((acc, currentCharacter, i) => {
         if(i < 4) {
             return acc + LETTER_VALUE[currentCharacter] * WEIGHTS_10[i];

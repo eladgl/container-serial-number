@@ -1,25 +1,25 @@
-import { Box, Paper, Typography } from "@mui/material";
-import Stack from "@mui/material/Stack";
+import { Box, Paper, Typography } from '@mui/material';
+import Stack from '@mui/material/Stack';
 
 function CenteredBox() {
   return (
     <Box
       sx={{
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        border: "red",
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        border: 'red',
         p: 2, // padding for small screens
       }}
     >
       <Paper
         elevation={4}
         sx={{
-          width: "100%",
+          width: '100%',
           maxWidth: 480,
           p: 3,
-          textAlign: "center",
+          textAlign: 'center',
         }}
       >
         <Stack></Stack>

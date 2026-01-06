@@ -1,13 +1,13 @@
-import { Checkbox, Box } from "@mui/material";
+import { Checkbox, Box } from '@mui/material';
 
 function FixCheckbox({ checked, onToggle, disabled = false, width = 44 }) {
   return (
     <Box
       sx={{
         width,
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
       }}
     >
       <Checkbox
@@ -15,7 +15,7 @@ function FixCheckbox({ checked, onToggle, disabled = false, width = 44 }) {
         disabled={disabled}
         onChange={(e) => onToggle(e.target.checked)}
         size="small"
-        inputProps={{ "aria-label": "Fix character" }}
+        inputProps={{ 'aria-label': 'Fix character' }}
       />
     </Box>
   );
